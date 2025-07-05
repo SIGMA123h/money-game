@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=vah1.0">
+  <title>Prosta Gra Zarobkowa</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+    }
+    ~
+
+    #game-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #FFF8E1;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    #balance {
+      font-size: 24px;
+      margin: 20px 0;
+    }
+    .upgrade {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    #settings-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      background: #e0e0e0;
+      color: #333;
+      padding: 8px;
+      border-radius: 50%;
+      border: 1px solid #ccc;
+      transition: background 0.2s;
+    }
+    #settings-btn:hover {
+      background: #d0d0d0;
+      color: #000;
+    }
+    #admin-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 24px;
+      background: #e0e0e0;
+      color: #333;
+      padding: 8px;
+      border-radius: 50%;
+      border: 1px solid #ccc;
+      transition: background 0.2s;
+    }
+    #admin-btn:hover {
+      background: #d0d0d0;
+      color: #000;
+    }
+    #settings-panel, #admin-panel {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      z-index: 1000;
+      min-width: 200px;
+      border: 1px solid #ccc;
+    }
+    #settings-panel select, #admin-panel input, #admin-panel select {
+      margin: 10px;
+      padding: 8px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: 150px;
+    }
+    #settings-panel button, #admin-panel button {
+      background-color: #2196F3;
+    }
+    #settings-panel button:hover, #admin-panel button:hover {
+      background-color: #1976D2;
+    }
+    #settings-close-btn, #admin-close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #333;
+    }
+    #settings-close-btn:hover, #admin-close-btn:hover {
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <h1 id="game-title">Prosta Gra Zarobkowa</h1>
+    <button id="admin-btn" onclick="promptAdminPassword()">🔒</button>
+    <button id="settings-btn" onclick="toggleSettings()">⚙️</button>
+    <div id="balance">Stan konta: 0 zł</div>
+    <button onclick="earnMoney()" id="earn-btn">Zarabiaj!</button>
+    <h2 id="upgrades-header">Ulepszenia</h2>
+    <div class="upgrade">
+      <p id="click-upgrade-text">Lepszy Klik: Zwiększa zarobki na klik o 1 zł (<span id="clickUpgradeCount">0</span>/50)</p>
+      <p id="click-upgrade-cost-text">Koszt: <span id="clickUpgradeCost">10</span> zł</p>
+      <button onclick="buyClickUpgrade()" id="clickUpgradeBtn">Kup</button>
+    </div>
+    <div class="upgrade">
+      <p id="super-click-upgrade-text">Super Klik: Zwiększa zarobki na klik o 5 zł (<span id="superClickUpgradeCount">0</span>/20)</p>
+      <p id="super-click-upgrade-cost-text">Koszt: <span id="superClickUpgradeCost">100</span> zł</p>
+      <button onclick="buySuperClickUpgrade()" id="superClickUpgradeBtn">Kup</button>
+    </div>
+    <div class="upgrade">
+      <p id="auto-upgrade-text">Automat: Zarabia 1 zł na sekundę (<span id="autoUpgradeCount">0</span>/40)</p>
+      <p id="auto-upgrade-cost-text">Koszt: <span id="autoUpgradeCost">50</span> zł</p>
+      <button onclick="buyAutoUpgrade()" id="autoUpgradeBtn">Kup</button>
+    </div>
+    <div class="upgrade">
+      <p id="super-auto-upgrade-text">Super Automat: Zarabia 5 zł na sekundę (<span id="superAutoUpgradeCount">0</span>/15)</p>
+      <p id="super-auto-upgrade-cost-text">Koszt: <span id="superAutoUpgradeCost">500</span> zł</p>
+      <button onclick="buySuperAutoUpgrade()" id="superAutoUpgradeBtn">Kup</button>
+    </div>
+    <div class="upgrade">
+      <p id="multiplier-upgrade-text">Mnożnik Zarobków: Podwaja wszystkie zarobki (<span id="multiplierUpgradeCount">0</span>/10)</p>
+      <p id="multiplier-upgrade-cost-text">Koszt: <span id="multiplierUpgradeCost">1000</span> zł</p>
+      <button onclick="buyMultiplierUpgrade()" id="multiplierUpgradeBtn">Kup</button>
+    </div>
+    <div class="upgrade">
+      <p id="time-bonus-text">Bonus Czasowy: 5x zarobki przez 10 sekund (co 30s) (<span id="timeBonusCount">0</span>/5)</p>
+      <p id="time-bonus-cost-text">Koszt: <span id="timeBonusCost">2000</span> zł</p>
+      <button onclick="buyTimeBonusUpgrade()" id="timeBonusBtn">Kup</button>
+    </div>
+    <div class="upgrade">
+      <p id="golden-click-text">Złoty Klik: 10% szans na 10x zarobki za klik (<span id="goldenClickCount">0</span>/8)</p>
+      <p id="golden-click-cost-text">Koszt: <span id="goldenClickCost">1500</span> zł</p>
+      <button onclick="buyGoldenClickUpgrade()" id="goldenClickBtn">Kup</button>
+    </div>
+    <div class="upgrade">
+      <p id="passive-growth-text">Pasywny Wzrost: +0.1% salda na sekundę (<span id="passiveGrowthCount">0</span>/5)</p>
+      <p id="passive-growth-cost-text">Koszt: <span id="passiveGrowthCost">2500</span> zł</p>
+      <button onclick="buyPassiveGrowthUpgrade()" id="passiveGrowthBtn">Kup</button>
+    </div>
+  </div>
+  <div id="settings-panel">
+    <h2 id="settings-header">Ustawienia</h2>
+    <button id="settings-close-btn" onclick="toggleSettings()">X</button>
+    <label for="bg-color" id="bg-color-label">Kolor tła:</label>
+    <select id="bg-color">
+      <option value="#FFF8E1" id="color-ivory">Miękka Kość Słoniowa</option>
+      <option value="#90CAF9" id="color-blue">Stonowany Niebieski</option>
+      <option value="#A5D6A7" id="color-green">Szałwiowy Zielony</option>
+      <option value="#FFAB91" id="color-coral">Ciepły Koralowy</option>
+      <option value="#B0BEC5" id="color-gray">Lawendowy Szary</option>
+      <option value="#F48FB1" id="color-pink">Przytłumiony Różowy</option>
+    </select>
+    <br>
+    <label for="language" id="language-label">Język:</label>
+    <select id="language">
+      <option value="pl">Polski</option>
+      <option value="en">English</option>
+      <option value="ru">Русский</option>
+      <option value="de">Deutsch</option>
+    </select>
+    <br>
+    <button onclick="toggleSettings()" id="settings-close">Zamknij</button>
+  </div>
+  <div id="admin-panel">
+    <h2 id="admin-header">Panel Admina</h2>
+    <button id="admin-close-btn" onclick="toggleAdminPanel()">X</button>
+    <p id="admin-message">Dostęp do panelu admina!</p>
+    <button onclick="toggleAdminPanel()" id="admin-close">Zamknij</button>
+  </div>
+
+  <script>
+    let balance = 0;
+    let clickValue = 1;
+    let autoValue = 0;
+    let clickUpgradeCost = 10;
+    let superClickUpgradeCost = 100;
+    let autoUpgradeCost = 50;
+    let superAutoUpgradeCost = 500;
+    let multiplierUpgradeCost = 1000;
+    let timeBonusCost = 2000;
+    let goldenClickCost = 1500;
+    let passiveGrowthCost = 2500;
+    let earningsMultiplier = 1;
+    let backgroundColor = '#FFF8E1';
+    let timeBonusActive = false;
+    let timeBonusLastUsed = 0;
+    let goldenClickChance = 0;
+    let passiveGrowthRate = 0;
+    let clickUpgradeCount = 0;
+    let superClickUpgradeCount = 0;
+    let autoUpgradeCount = 0;
+    let superAutoUpgradeCount = 0;
+    let multiplierUpgradeCount = 0;
+    let timeBonusCount = 0;
+    let goldenClickCount = 0;
+    let passiveGrowthCount = 0;
+    let language = 'pl';
+    const maxClickUpgrades = 50;
+    const maxSuperClickUpgrades = 20;
+    const maxAutoUpgrades = 40;
+    const maxSuperAutoUpgrades = 15;
+    const maxMultiplierUpgrades = 10;
+    const maxTimeBonusUpgrades = 5;
+    const maxGoldenClickUpgrades = 8;
+    const maxPassiveGrowthUpgrades = 5;
+
+    const translations = {
+      pl: {
+        title: 'Prosta Gra Zarobkowa',
+        balance: 'Stan konta: {balance} zł',
+        earn: 'Zarabiaj!',
+        upgrades: 'Ulepszenia',
+        clickUpgrade: 'Lepszy Klik: Zwiększa zarobki na klik o 1 zł',
+        superClickUpgrade: 'Super Klik: Zwiększa zarobki na klik o 5 zł',
+        autoUpgrade: 'Automat: Zarabia 1 zł na sekundę',
+        superAutoUpgrade: 'Super Automat: Zarabia 5 zł na sekundę',
+        multiplierUpgrade: 'Mnożnik Zarobków: Podwaja wszystkie zarobki',
+        timeBonus: 'Bonus Czasowy: 5x zarobki przez 10 sekund (co 30s)',
+        goldenClick: 'Złoty Klik: 10% szans na 10x zarobki za klik',
+        passiveGrowth: 'Pasywny Wzrost: +0.1% salda na sekundę',
+        cost: 'Koszt: {cost} zł',
+        buy: 'Kup',
+        settings: 'Ustawienia',
+        bgColorLabel: 'Kolor tła:',
+        close: 'Zamknij',
+        languageLabel: 'Język:',
+        colorIvory: 'Miękka Kość Słoniowa',
+        colorBlue: 'Stonowany Niebieski',
+        colorGreen: 'Szałwiowy Zielony',
+        colorCoral: 'Ciepły Koralowy',
+        colorGray: 'Lawendowy Szary',
+        colorPink: 'Przytłumiony Różowy',
+        adminHeader: 'Panel Admina',
+        adminMessage: 'Dostęp do panelu admina!',
+        passwordPrompt: 'Wpisz hasło'
+      },
+      en: {
+        title: 'Simple Earning Game',
+        balance: 'Balance: {balance} zł',
+        earn: 'Earn!',
+        upgrades: 'Upgrades',
+        clickUpgrade: 'Better Click: Increases click earnings by 1 zł',
+        superClickUpgrade: 'Super Click: Increases click earnings by 5 zł',
+        autoUpgrade: 'Auto: Earns 1 zł per second',
+        superAutoUpgrade: 'Super Auto: Earns 5 zł per second',
+        multiplierUpgrade: 'Earnings Multiplier: Doubles all earnings',
+        timeBonus: 'Time Bonus: 5x earnings for 10 seconds (every 30s)',
+        goldenClick: 'Golden Click: 10% chance for 10x click earnings',
+        passiveGrowth: 'Passive Growth: +0.1% of balance per second',
+        cost: 'Cost: {cost} zł',
+        buy: 'Buy',
+        settings: 'Settings',
+        bgColorLabel: 'Background Color:',
+        close: 'Close',
+        languageLabel: 'Language:',
+        colorIvory: 'Soft Ivory',
+        colorBlue: 'Muted Blue',
+        colorGreen: 'Sage Green',
+        colorCoral: 'Warm Coral',
+        colorGray: 'Lavender Gray',
+        colorPink: 'Dusty Rose',
+        adminHeader: 'Admin Panel',
+        adminMessage: 'Access to admin panel!',
+        passwordPrompt: 'Enter password'
+      },
+      ru: {
+        title: 'Простая игра на заработок',
+        balance: 'Баланс: {balance} zł',
+        earn: 'Зарабатывай!',
+        upgrades: 'Улучшения',
+        clickUpgrade: 'Лучший клик: Увеличивает доход от клика на 1 zł',
+        superClickUpgrade: 'Супер-клик: Увеличивает доход от клика на 5 zł',
+        autoUpgrade: 'Автомат: Зарабатывает 1 zł в секунду',
+        superAutoUpgrade: 'Супер-автомат: Зарабатывает 5 zł в секунду',
+        multiplierUpgrade: 'Множитель дохода: Удваивает все доходы',
+        timeBonus: 'Временной бонус: 5x доход в течение 10 секунд (каждые 30 с)',
+        goldenClick: 'Золотой клик: 10% шанс на 10x доход от клика',
+        passiveGrowth: 'Пассивный рост: +0.1% баланса в секунду',
+        cost: 'Стоимость: {cost} zł',
+        buy: 'Купить',
+        settings: 'Настройки',
+        bgColorLabel: 'Цвет фона:',
+        close: 'Закрыть',
+        languageLabel: 'Язык:',
+        colorIvory: 'Мягкая слоновая кость',
+        colorBlue: 'Приглушённый синий',
+        colorGreen: 'Шалфейный зелёный',
+        colorCoral: 'Тёплый коралловый',
+        colorGray: 'Лавандовый серый',
+        colorPink: 'Приглушённый розовый',
+        adminHeader: 'Панель администратора',
+        adminMessage: 'Доступ к панели администратора!',
+        passwordPrompt: 'Введите пароль'
+      },
+      de: {
+        title: 'Einfaches Verdienstspiel',
+        balance: 'Kontostand: {balance} zł',
+        earn: 'Verdienen!',
+        upgrades: 'Upgrades',
+        clickUpgrade: 'Besserer Klick: Erhöht Klick-Einnahmen um 1 zł',
+        superClickUpgrade: 'Super-Klick: Erhöht Klick-Einnahmen um 5 zł',
+        autoUpgrade: 'Automat: Verdient 1 zł pro Sekunde',
+        superAutoUpgrade: 'Super-Automat: Verdient 5 zł pro Sekunde',
+        multiplierUpgrade: 'Ertragsmultiplikator: Verdoppelt alle Einnahmen',
+        timeBonus: 'Zeitbonus: 5x Einnahmen für 10 Sekunden (alle 30s)',
+        goldenClick: 'Goldener Klick: 10% Chance auf 10x Klick-Einnahmen',
+        passiveGrowth: 'Passives Wachstum: +0.1% des Kontostands pro Sekunde',
+        cost: 'Kosten: {cost} zł',
+        buy: 'Kaufen',
+        settings: 'Einstellungen',
+        bgColorLabel: 'Hintergrundfarbe:',
+        close: 'Schließen',
+        languageLabel: 'Sprache:',
+        colorIvory: 'Weiches Elfenbein',
+        colorBlue: 'Gedämpftes Blau',
+        colorGreen: 'Salbeigrün',
+        colorCoral: 'Warmes Koralle',
+        colorGray: 'Lavendelgrau',
+        colorPink: 'Staubiges Rosa',
+        adminHeader: 'Admin-Panel',
+        adminMessage: 'Zugang zum Admin-Panel!',
+        passwordPrompt: 'Passwort eingeben'
+      }
+    };
+
+    // Load game state from localStorage
+    function loadGame() {
+      const savedGame = localStorage.getItem('gameState');
+      if (savedGame) {
+        const gameState = JSON.parse(savedGame);
+        balance = gameState.balance || 0;
+        clickValue = gameState.clickValue || 1;
+        autoValue = gameState.autoValue || 0;
+        clickUpgradeCost = gameState.clickUpgradeCost || 10;
+        superClickUpgradeCost = gameState.superClickUpgradeCost || 100;
+        autoUpgradeCost = gameState.autoUpgradeCost || 50;
+        superAutoUpgradeCost = gameState.superAutoUpgradeCost || 500;
+        multiplierUpgradeCost = gameState.multiplierUpgradeCost || 1000;
+        timeBonusCost = gameState.timeBonusCost || 2000;
+        goldenClickCost = gameState.goldenClickCost || 1500;
+        passiveGrowthCost = gameState.passiveGrowthCost || 2500;
+        earningsMultiplier = gameState.earningsMultiplier || 1;
+        backgroundColor = gameState.backgroundColor || '#FFF8E1';
+        timeBonusActive = gameState.timeBonusActive || false;
+        timeBonusLastUsed = gameState.timeBonusLastUsed || 0;
+        goldenClickChance = gameState.goldenClickChance || 0;
+        passiveGrowthRate = gameState.passiveGrowthRate || 0;
+        clickUpgradeCount = gameState.clickUpgradeCount || 0;
+        superClickUpgradeCount = gameState.superClickUpgradeCount || 0;
+        autoUpgradeCount = gameState.autoUpgradeCount || 0;
+        superAutoUpgradeCount = gameState.superAutoUpgradeCount || 0;
+        multiplierUpgradeCount = gameState.multiplierUpgradeCount || 0;
+        timeBonusCount = gameState.timeBonusCount || 0;
+        goldenClickCount = gameState.goldenClickCount || 0;
+        passiveGrowthCount = gameState.passiveGrowthCount || 0;
+        language = gameState.language || 'pl';
+        document.getElementById('game-container').style.backgroundColor = backgroundColor;
+        document.getElementById('bg-color').value = backgroundColor;
+        document.getElementById('language').value = language;
+      }
+      updateLanguage();
+      updateBalance();
+    }
+
+    // Save game state to localStorage
+    function saveGame() {
+      const gameState = {
+        balance,
+        clickValue,
+        autoValue,
+        clickUpgradeCost,
+        superClickUpgradeCost,
+        autoUpgradeCost,
+        superAutoUpgradeCost,
+        multiplierUpgradeCost,
+        timeBonusCost,
+        goldenClickCost,
+        passiveGrowthCost,
+        earningsMultiplier,
+        backgroundColor,
+        timeBonusActive,
+        timeBonusLastUsed,
+        goldenClickChance,
+        passiveGrowthRate,
+        clickUpgradeCount,
+        superClickUpgradeCount,
+        autoUpgradeCount,
+        superAutoUpgradeCount,
+        multiplierUpgradeCount,
+        timeBonusCount,
+        goldenClickCount,
+        passiveGrowthCount,
+        language
+      };
+      localStorage.setItem('gameState', JSON.stringify(gameState));
+    }
+
+    function updateLanguage() {
+      const t = translations[language];
+      document.getElementById('game-title').textContent = t.title;
+      document.getElementById('balance').textContent = t.balance.replace('{balance}', Math.round(balance));
+      document.getElementById('earn-btn').textContent = t.earn;
+      document.getElementById('upgrades-header').textContent = t.upgrades;
+      document.getElementById('click-upgrade-text').childNodes[0].textContent = t.clickUpgrade + ' ';
+      document.getElementById('super-click-upgrade-text').childNodes[0].textContent = t.superClickUpgrade + ' ';
+      document.getElementById('auto-upgrade-text').childNodes[0].textContent = t.autoUpgrade + ' ';
+      document.getElementById('super-auto-upgrade-text').childNodes[0].textContent = t.superAutoUpgrade + ' ';
+      document.getElementById('multiplier-upgrade-text').childNodes[0].textContent = t.multiplierUpgrade + ' ';
+      document.getElementById('time-bonus-text').childNodes[0].textContent = t.timeBonus + ' ';
+      document.getElementById('golden-click-text').childNodes[0].textContent = t.goldenClick + ' ';
+      document.getElementById('passive-growth-text').childNodes[0].textContent = t.passiveGrowth + ' ';
+      document.getElementById('click-upgrade-cost-text').childNodes[0].textContent = t.cost.replace('{cost}', clickUpgradeCost) + ' ';
+      document.getElementById('super-click-upgrade-cost-text').childNodes[0].textContent = t.cost.replace('{cost}', superClickUpgradeCost) + ' ';
+      document.getElementById('auto-upgrade-cost-text').childNodes[0].textContent = t.cost.replace('{cost}', autoUpgradeCost) + ' ';
+      document.getElementById('super-auto-upgrade-cost-text').childNodes[0].textContent = t.cost.replace('{cost}', superAutoUpgradeCost) + ' ';
+      document.getElementById('multiplier-upgrade-cost-text').childNodes[0].textContent = t.cost.replace('{cost}', multiplierUpgradeCost) + ' ';
+      document.getElementById('time-bonus-cost-text').childNodes[0].textContent = t.cost.replace('{cost}', timeBonusCost) + ' ';
+      document.getElementById('golden-click-cost-text').childNodes[0].textContent = t.cost.replace('{cost}', goldenClickCost) + ' ';
+      document.getElementById('passive-growth-cost-text').childNodes[0].textContent = t.cost.replace('{cost}', passiveGrowthCost) + ' ';
+      document.getElementById('clickUpgradeBtn').textContent = t.buy;
+      document.getElementById('superClickUpgradeBtn').textContent = t.buy;
+      document.getElementById('autoUpgradeBtn').textContent = t.buy;
+      document.getElementById('superAutoUpgradeBtn').textContent = t.buy;
+      document.getElementById('multiplierUpgradeBtn').textContent = t.buy;
+      document.getElementById('timeBonusBtn').textContent = t.buy;
+      document.getElementById('goldenClickBtn').textContent = t.buy;
+      document.getElementById('passiveGrowthBtn').textContent = t.buy;
+      document.getElementById('settings-header').textContent = t.settings;
+      document.getElementById('bg-color-label').textContent = t.bgColorLabel;
+      document.getElementById('language-label').textContent = t.languageLabel;
+      document.getElementById('settings-close').textContent = t.close;
+      document.getElementById('color-ivory').textContent = t.colorIvory;
+      document.getElementById('color-blue').textContent = t.colorBlue;
+      document.getElementById('color-green').textContent = t.colorGreen;
+      document.getElementById('color-coral').textContent = t.colorCoral;
+      document.getElementById('color-gray').textContent = t.colorGray;
+      document.getElementById('color-pink').textContent = t.colorPink;
+      document.getElementById('admin-header').textContent = t.adminHeader;
+      document.getElementById('admin-message').textContent = t.adminMessage;
+      document.getElementById('admin-close').textContent = t.close;
+    }
+
+    function updateBalance() {
+      document.getElementById('balance').textContent = translations[language].balance.replace('{balance}', Math.round(balance));
+      document.getElementById('clickUpgradeCost').textContent = clickUpgradeCost;
+      document.getElementById('superClickUpgradeCost').textContent = superClickUpgradeCost;
+      document.getElementById('autoUpgradeCost').textContent = autoUpgradeCost;
+      document.getElementById('superAutoUpgradeCost').textContent = superAutoUpgradeCost;
+      document.getElementById('multiplierUpgradeCost').textContent = multiplierUpgradeCost;
+      document.getElementById('timeBonusCost').textContent = timeBonusCost;
+      document.getElementById('goldenClickCost').textContent = goldenClickCost;
+      document.getElementById('passiveGrowthCost').textContent = passiveGrowthCost;
+      document.getElementById('clickUpgradeCount').textContent = clickUpgradeCount;
+      document.getElementById('superClickUpgradeCount').textContent = superClickUpgradeCount;
+      document.getElementById('autoUpgradeCount').textContent = autoUpgradeCount;
+      document.getElementById('superAutoUpgradeCount').textContent = superAutoUpgradeCount;
+      document.getElementById('multiplierUpgradeCount').textContent = multiplierUpgradeCount;
+      document.getElementById('timeBonusCount').textContent = timeBonusCount;
+      document.getElementById('goldenClickCount').textContent = goldenClickCount;
+      document.getElementById('passiveGrowthCount').textContent = passiveGrowthCount;
+      document.getElementById('clickUpgradeBtn').disabled = balance < clickUpgradeCost || clickUpgradeCount >= maxClickUpgrades;
+      document.getElementById('superClickUpgradeBtn').disabled = balance < superClickUpgradeCost || superClickUpgradeCount >= maxSuperClickUpgrades;
+      document.getElementById('autoUpgradeBtn').disabled = balance < autoUpgradeCost || autoUpgradeCount >= maxAutoUpgrades;
+      document.getElementById('superAutoUpgradeBtn').disabled = balance < superAutoUpgradeCost || superAutoUpgradeCount >= maxSuperAutoUpgrades;
+      document.getElementById('multiplierUpgradeBtn').disabled = balance < multiplierUpgradeCost || multiplierUpgradeCount >= maxMultiplierUpgrades;
+      document.getElementById('timeBonusBtn').disabled = balance < timeBonusCost || timeBonusActive || (Date.now() - timeBonusLastUsed < 30000) || timeBonusCount >= maxTimeBonusUpgrades;
+      document.getElementById('goldenClickBtn').disabled = balance < goldenClickCost || goldenClickCount >= maxGoldenClickUpgrades;
+      document.getElementById('passiveGrowthBtn').disabled = balance < passiveGrowthCost || passiveGrowthCount >= maxPassiveGrowthUpgrades;
+      updateLanguage();
+      saveGame();
+    }
+
+    function earnMoney() {
+      let clickEarnings = clickValue * earningsMultiplier;
+      if (goldenClickChance > 0 && Math.random() < goldenClickChance) {
+        clickEarnings *= 10;
+      }
+      if (timeBonusActive) {
+        clickEarnings *= 5;
+      }
+      balance += clickEarnings;
+      updateBalance();
+    }
+
+    function buyClickUpgrade() {
+      if (balance >= clickUpgradeCost && clickUpgradeCount < maxClickUpgrades) {
+        balance -= clickUpgradeCost;
+        clickValue += 1;
+        clickUpgradeCost = Math.round(clickUpgradeCost * 1.5);
+        clickUpgradeCount++;
+        updateBalance();
+      }
+    }
+
+    function buySuperClickUpgrade() {
+      if (balance >= superClickUpgradeCost && superClickUpgradeCount < maxSuperClickUpgrades) {
+        balance -= superClickUpgradeCost;
+        clickValue += 5;
+        superClickUpgradeCost = Math.round(superClickUpgradeCost * 1.5);
+        superClickUpgradeCount++;
+        updateBalance();
+      }
+    }
+
+    function buyAutoUpgrade() {
+      if (balance >= autoUpgradeCost && autoUpgradeCount < maxAutoUpgrades) {
+        balance -= autoUpgradeCost;
+        autoValue += 1;
+        autoUpgradeCost = Math.round(autoUpgradeCost * 1.5);
+        autoUpgradeCount++;
+        updateBalance();
+      }
+    }
+
+    function buySuperAutoUpgrade() {
+      if (balance >= superAutoUpgradeCost && superAutoUpgradeCount < maxSuperAutoUpgrades) {
+        balance -= superAutoUpgradeCost;
+        autoValue += 5;
+        superAutoUpgradeCost = Math.round(superAutoUpgradeCost * 1.5);
+        superAutoUpgradeCount++;
+        updateBalance();
+      }
+    }
+
+    function buyMultiplierUpgrade() {
+      if (balance >= multiplierUpgradeCost && multiplierUpgradeCount < maxMultiplierUpgrades) {
+        balance -= multiplierUpgradeCost;
+        earningsMultiplier *= 2;
+        multiplierUpgradeCost = Math.round(multiplierUpgradeCost * 1.5);
+        multiplierUpgradeCount++;
+        updateBalance();
+      }
+    }
+
+    function buyTimeBonusUpgrade() {
+      if (balance >= timeBonusCost && !timeBonusActive && (Date.now() - timeBonusLastUsed >= 30000) && timeBonusCount < maxTimeBonusUpgrades) {
+        balance -= timeBonusCost;
+        timeBonusActive = true;
+        timeBonusLastUsed = Date.now();
+        timeBonusCost = Math.round(timeBonusCost * 1.5);
+        timeBonusCount++;
+        setTimeout(() => {
+          timeBonusActive = false;
+          updateBalance();
+        }, 10000);
+        updateBalance();
+      }
+    }
+
+    function buyGoldenClickUpgrade() {
+      if (balance >= goldenClickCost && goldenClickCount < maxGoldenClickUpgrades) {
+        balance -= goldenClickCost;
+        goldenClickChance += 0.1;
+        goldenClickCost = Math.round(goldenClickCost * 1.5);
+        goldenClickCount++;
+        updateBalance();
+      }
+    }
+
+    function buyPassiveGrowthUpgrade() {
+      if (balance >= passiveGrowthCost && passiveGrowthCount < maxPassiveGrowthUpgrades) {
+        balance -= passiveGrowthCost;
+        passiveGrowthRate += 0.001;
+        passiveGrowthCost = Math.round(passiveGrowthCost * 1.5);
+        passiveGrowthCount++;
+        updateBalance();
+      }
+    }
+
+    function toggleSettings() {
+      const panel = document.getElementById('settings-panel');
+      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function promptAdminPassword() {
+      const password = prompt(translations[language].passwordPrompt);
+      if (password && password.toLowerCase() === 'ziemniak') {
+        toggleAdminPanel();
+      } else {
+        alert('Nieprawidłowe hasło!');
+      }
+    }
+
+    function toggleAdminPanel() {
+      const panel = document.getElementById('admin-panel');
+      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    }
+
+    document.getElementById('bg-color').addEventListener('change', function() {
+      backgroundColor = this.value;
+      document.getElementById('game-container').style.backgroundColor = backgroundColor;
+      saveGame();
+      updateLanguage();
+    });
+
+    document.getElementById('language').addEventListener('change', function() {
+      language = this.value;
+      saveGame();
+      updateLanguage();
+    });
+
+    setInterval(() => {
+      let autoEarnings = autoValue * earningsMultiplier;
+      if (timeBonusActive) {
+        autoEarnings *= 5;
+      }
+      if (passiveGrowthRate > 0) {
+        autoEarnings += balance * passiveGrowthRate;
+      }
+      balance += autoEarnings;
+      updateBalance();
+    }, 1000);
+
+    // Load game state when the page loads
+    loadGame();
+  </script>
+</body>
+</html>
